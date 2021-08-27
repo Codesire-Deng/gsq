@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.20.0)
 
-project(MyProject VERSION 0.1.0)
+project(GSQ VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -17,6 +17,19 @@ if(MY_BUILD_TYPE MATCHES Debug)
 endif(MY_BUILD_TYPE MATCHES Debug)
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS) # 禁用MSVC关于fopen的编译警告
+
+# Boost Library
+if (WIN32)
+    set(BOOST_ROOT "C:\\boost_1_77_0")
+endif(WIN32)
+
+if (UNIX)
+    set(BOOST_ROOT "/usr/local/boost_1_77_0")
+endif(UNIX)
+find_package(Boost REQUIRED)
+include_directories("${Boost_INCLUDE_DIR}")
+message("Boost include dir=${Boost_INCLUDE_DIR}")
+# END Boost Library
 
 # 指定include搜索目录
 include_directories(${PROJECT_SOURCE_DIR}/include)

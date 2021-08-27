@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <boost/gil.hpp>
 
 #include <iostream>
 #include <version/version.hpp>

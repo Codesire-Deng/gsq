@@ -18,20 +18,30 @@ endif(MY_BUILD_TYPE MATCHES Debug)
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS) # 禁用MSVC关于fopen的编译警告
 
-# Boost Library
+# Path to dependencies
 if (WIN32)
-    set(BOOST_ROOT "C:\\boost_1_77_0")
+set(BOOST_ROOT "C:/libraries/boost_1_77_0")
+set(EIGEN_ROOT "C:/libraries/eigen-3.4.0")
 endif(WIN32)
 
 if (UNIX)
-    set(BOOST_ROOT "/usr/local/boost_1_77_0")
+set(BOOST_ROOT "/usr/local/boost_1_77_0")
+set(EIGEN_ROOT "/usr/local/eigen-3.4.0")
 endif(UNIX)
+# END Path to dependencies
+
+# Boost Library
 find_package(Boost REQUIRED)
 include_directories("${Boost_INCLUDE_DIR}")
 message("Boost include dir=${Boost_INCLUDE_DIR}")
 # END Boost Library
 
-# 指定include搜索目录
+# Eigen
+include_directories("${EIGEN_ROOT}")
+message("Eigen include dir=${EIGEN_ROOT}")
+# END Eigen
+
+# 指定自有头文件搜索目录
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/ThirdParty)
 

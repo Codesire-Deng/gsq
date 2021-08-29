@@ -5,6 +5,8 @@
 #include <iostream>
 #include <version/version.hpp>
 
+#include <Eigen/Dense>
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
@@ -18,6 +20,8 @@ int main() {
     GLFWwindow *window = initWindow();
 
     printGLVersion();
+
+    std::cout << Eigen::Matrix3d::Constant(1.2) << std::endl;
 
     // render loop
     // -----------

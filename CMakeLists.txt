@@ -23,13 +23,13 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS) # 禁用MSVC关于fopen的编译警�
 
 # Path to dependencies
 if (WIN32)
-set(BOOST_ROOT "C:/libraries/boost_1_77_0")
-set(EIGEN_ROOT "C:/libraries/eigen-3.4.0")
+    set(BOOST_ROOT "C:/libraries/boost_1_77_0")
+    set(EIGEN_ROOT "C:/libraries/eigen-3.4.0")
 endif(WIN32)
 
 if (UNIX)
-set(BOOST_ROOT "/usr/local/boost_1_77_0")
-set(EIGEN_ROOT "/usr/local/eigen-3.4.0")
+    set(BOOST_ROOT "/usr/local/boost_1_77_0")
+    set(EIGEN_ROOT "/usr/local/eigen-3.4.0")
 endif(UNIX)
 # END Path to dependencies
 
@@ -43,6 +43,10 @@ message("Boost include dir=${Boost_INCLUDE_DIR}")
 include_directories("${EIGEN_ROOT}")
 message("Eigen include dir=${EIGEN_ROOT}")
 # END Eigen
+
+# Dear ImGui
+
+# END Dear ImGui
 
 # 指定自有头文件搜索目录
 include_directories(${PROJECT_SOURCE_DIR}/include)

@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.10.0)
 # 设置exe输出目录为./build
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
+add_subdirectory(./ThirdParty)
+
 # main.cpp -> main.exe （当然还需要链接各种库）
 add_executable(main main.cpp glad.c)
 
@@ -11,7 +13,7 @@ add_executable(main main.cpp glad.c)
 # target_link_libraries(main PRIVATE common object)
 
 # 链接第三方库
-target_link_libraries(main PRIVATE glfw3)
+target_link_libraries(main PRIVATE glfw3 imgui)
 
 # -------------------------------------------------
 # 到这里 Exe 已经生成完了。 接下来将运行时需要的文件复制一下

@@ -14,6 +14,9 @@ message("CMAKE_CONFIGURATION_TYPES=${CMAKE_CONFIGURATION_TYPES}")
 
 if(MY_BUILD_TYPE MATCHES Debug)
     add_definitions(-DDEBUG)    # 启用部分调试信息
+else(MY_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DNDEBUG)
+    add_definitions(-DEIGEN_NO_DEBUG)
 endif(MY_BUILD_TYPE MATCHES Debug)
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS) # 禁用MSVC关于fopen的编译警告

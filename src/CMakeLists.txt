@@ -7,7 +7,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 add_subdirectory(./ThirdParty)
 
 # main.cpp -> main.exe （当然还需要链接各种库）
-add_executable(main main.cpp glad.c)
+add_executable(main main.cpp glad.c convex.cpp)
 
 # 链接自定义库
 # target_link_libraries(main PRIVATE common object)

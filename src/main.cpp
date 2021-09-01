@@ -11,6 +11,7 @@
 #include <version/version.hpp>
 
 #include <Eigen/Dense>
+#include <convex.hpp>
 
 static void glfw_error_callback(int error, const char *description);
 static void
@@ -23,6 +24,8 @@ constexpr unsigned int SCR_HEIGHT = 720;
 
 static GLFWwindow *initWindow();
 static ImGuiIO &initImGui(GLFWwindow *window);
+
+static void workload();
 
 int main() {
     GLFWwindow *window = initWindow();
@@ -119,6 +122,9 @@ int main() {
             clear_color.x * clear_color.w, clear_color.y * clear_color.w,
             clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        workload();
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
@@ -134,6 +140,33 @@ int main() {
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+static void workload() {
+    constexpr int MAX_VERT = 32;
+    using Point = Eigen::Vector3f;
+    static Point points[MAX_VERT];
+    int verticesNum, queryPolygonsNum;
+
+    FILE *in = fopen("data/select_points.txt", "r");
+
+    // input points to be queried
+    fscanf(in, "%d", &verticesNum);
+    for (int i = 0; i < verticesNum; ++i) {
+        float x, y;
+        fscanf(in, "%f%f", &x, &y);
+        points[i] << x, y, 0.0f;
+    }
+
+    // input querying polygons
+    fscanf(in, "%d", &queryPolygonsNum);
+    for (int i=0; i<queryPolygonsNum; ++i) {
+
+    }
+
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this

@@ -3,23 +3,26 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <iostream>
+#include <bound.hpp>
 
 namespace Polygon {
 
-    class Convex {
-      public:
-        using Vertex = Eigen::Vector3f;
+class Convex {
+  public:
+    using Vertex = Eigen::Vector3f;
 
-        static Convex FromInput(FILE *const in);
+    static Convex FromInput(FILE *const in);
 
-        Convex(const Convex &other) = default;
-        Convex(Convex &&other) = default;
+    Convex(const Convex &other) = default;
+    Convex(Convex &&other) = default;
 
-      protected:
-        std::vector<Vertex> vertices;
+    std::pair<Bound<float>, Bound<float>> bounds() const;
 
-      private:
-        Convex(){};
-    };
+  protected:
+    std::vector<Vertex> vertices;
+
+  private:
+    Convex(){};
+};
 
 } // namespace Polygon

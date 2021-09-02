@@ -8,10 +8,13 @@
 #include <boost/gil.hpp>
 
 #include <iostream>
+#include <optional>
 #include <version/version.hpp>
 
 #include <Eigen/Dense>
 #include <convex.hpp>
+#include <shader.hpp>
+#include <bound.hpp>
 
 static void glfw_error_callback(int error, const char *description);
 static void
@@ -25,7 +28,17 @@ constexpr unsigned int SCR_HEIGHT = 720;
 static GLFWwindow *initWindow();
 static ImGuiIO &initImGui(GLFWwindow *window);
 
+namespace Work {
+
+using real = float;
+
+GLuint pointsVBO, pointsVAO;
+GLuint shaderProgram;
+
+static void input();
 static void workload();
+
+} // namespace Work
 
 int main() {
     GLFWwindow *window = initWindow();
@@ -40,6 +53,10 @@ int main() {
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    Work::input();
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
@@ -123,7 +140,7 @@ int main() {
             clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        workload();
+        Work::workload();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -142,11 +159,43 @@ int main() {
     return 0;
 }
 
+namespace Work {
+
 static void workload() {
+    glUseProgram(shaderProgram);
+    glBindVertexArray(pointsVAO);
+    glDrawArrays(GL_POINTS, 0, 3);
+}
+
+static void input() {
+    // construct shader and program
+    // vShader.emplace(VertexShader("shader/point.vert"));
+    // fShader.emplace(FragmentShader("shader/point.frag"));
+    VertexShader vShader("shader/point.vert");
+    FragmentShader fShader("shader/point.frag");
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vShader);
+    glAttachShader(shaderProgram, fShader);
+    glLinkProgram(shaderProgram);
+#ifdef DEBUG
+    {
+        using namespace std;
+        static int success;
+        static char infoLog[512];
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(shaderProgram, 512, nullptr, infoLog);
+            cerr << "create_shader: compile failed:\n" << infoLog << endl;
+            exit(1);
+        }
+    }
+#endif
+
     constexpr int MAX_VERT = 32;
-    using Point = Eigen::Vector3f;
+    using Point = Eigen::Matrix<real, 3, 1>;
     static Point points[MAX_VERT];
     int verticesNum, queryPolygonsNum;
+    Bound<real> bound[2];
 
     FILE *in = fopen("data/select_points.txt", "r");
 
@@ -156,22 +205,75 @@ static void workload() {
         float x, y;
         fscanf(in, "%f%f", &x, &y);
         points[i] << x, y, 0.0f;
+        bound[0].merge(x);
+        bound[1].merge(y);
     }
 
-    // input querying polygons
-    fscanf(in, "%d", &queryPolygonsNum);
-    for (int i=0; i<queryPolygonsNum; ++i) {
-
+    for (int i=0; i<2; ++i) {
+        bound[i].lowerBound -= 5.0f;
+        bound[i].upperBound += 5.0f;
     }
 
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    const real ratio[2] = {
+        1.0 / (bound[0].upperBound - bound[0].lowerBound) * (1.0f - (-1.0f)),
+        1.0 / (bound[1].upperBound - bound[1].lowerBound) * (1.0f - (-1.0f)),
+    };
+    const auto &lerp = [&](Point &point) {
+        for (int i = 0; i < 2; ++i) {
+            point[i] = (point[i] - bound[i].lowerBound) * ratio[i] - 1.0f;
+        }
+    };
+
+    for (int i = 0; i < verticesNum; ++i) {
+        lerp(points[i]);
+        std::cout << points[i] << std::endl;
+    }
+
+    // input querying polygons, which are made convexs
+    // fscanf(in, "%d", &queryPolygonsNum);
+    // std::vector<Polygon::Convex> convexs;
+    // for (int i = 0; i < queryPolygonsNum; ++i) {
+    //     convexs.push_back(Polygon::Convex::FromInput(in));
+    //     auto [xBound, yBound] = convexs.back().bounds();
+    //     bound[0].merge(xBound);
+    //     bound[1].merge(yBound);
+    // }
+
+    // clang-format off
+    static const float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+    };
+    // clang-format on
+
+    glGenBuffers(1, &pointsVBO);
+    glGenVertexArrays(1, &pointsVAO);
+    glBindVertexArray(pointsVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
+    glBufferData(
+        GL_ARRAY_BUFFER, verticesNum * sizeof(Point), points, GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
+    // GL_STATIC_DRAW);
+
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally
+    // modify this VAO, but this rarely happens. Modifying other VAOs requires a
+    // call to glBindVertexArray anyways so we generally don't unbind VAOs (nor
+    // VBOs) when it's not directly necessary.
+    glBindVertexArray(0);
 }
+
+} // namespace Work
 
 // process all input: query GLFW whether relevant keys are pressed/released this
 // frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 static void processInput(GLFWwindow *window, const ImGuiIO &io) {
     if (!io.WantCaptureKeyboard) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -181,7 +283,7 @@ static void processInput(GLFWwindow *window, const ImGuiIO &io) {
 
 // glfw: whenever the window size changed (by OS or user resize) this callback
 // function executes
-// ---------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 static void
 framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     // make sure the viewport matches the new window dimensions; note that width

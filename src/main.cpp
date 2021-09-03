@@ -36,8 +36,14 @@ namespace Work {
 
 int verticesNum, queryPolygonsNum;
 
+Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(0.5f, 0.5f, 1.0f);
+
 GLuint pointsVBO, pointsVAO;
 GLuint shaderProgram;
+float pointSize = 10.0f;
+int customColorLocation = -1;
+
+std::vector<Polygon::Convex> convexs;
 
 static void input();
 static void workload();
@@ -58,7 +64,7 @@ int main() {
 
     Work::input();
 
-    glEnable(GL_PROGRAM_POINT_SIZE);
+    // glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {
@@ -97,15 +103,26 @@ int main() {
             ImGui::Checkbox(
                 "Demo Window", &show_demo_window); // Edit bools storing our
                                                    // window open/close state
-            /*
-            ImGui::Checkbox("Another Window", &show_another_window);
+
+            // ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SliderFloat(
-                "float", &f, 0.0f,
-                1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            */
+                "Point size",
+                &Work::pointSize,
+                1.0f,
+                10.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+
             ImGui::ColorEdit3(
-                "clear color",
+                "Point color",
+                Work::pointColor.data()); // Edit 3 floats representing a color
+
+            ImGui::ColorEdit3(
+                "Polygon color",
+                Work::polygonColor
+                    .data()); // Edit 3 floats representing a color
+
+            ImGui::ColorEdit3(
+                "Clear color",
                 (float *)&clear_color); // Edit 3 floats representing a color
 
             /*
@@ -174,10 +191,22 @@ namespace Work {
 
 static void workload() {
     glUseProgram(shaderProgram);
-    glBindVertexArray(pointsVAO);
-    const int num = int(glfwGetTime()) % verticesNum + 1;
-    glDrawArrays(GL_POINTS, 0, num);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, num);
+    glUniform3fv(customColorLocation, 1, polygonColor.data());
+    // draw convexs
+    std::for_each(convexs.begin(), convexs.end(), [](const auto &convex) {
+        convex.draw();
+    });
+
+    glUseProgram(shaderProgram);
+    glUniform3fv(customColorLocation, 1, pointColor.data());
+    // draw points
+    {
+        glUseProgram(shaderProgram);
+        glBindVertexArray(pointsVAO);
+        // const int num = int(glfwGetTime()) % verticesNum + 1;
+        glPointSize(pointSize);
+        glDrawArrays(GL_POINTS, 0, verticesNum);
+    }
 }
 
 static void input() {
@@ -203,9 +232,10 @@ static void input() {
         }
     }
 #endif
+    // prepare to set color uniform
+    customColorLocation = glGetUniformLocation(shaderProgram, "customColor");
 
     constexpr int MAX_VERT = 32;
-    using Point = Eigen::Matrix<real, 3, 1>;
     static Point points[MAX_VERT];
     Bound<real> bound[2];
 
@@ -219,6 +249,15 @@ static void input() {
         points[i] << x, y, 0.0f;
         bound[0].merge(x);
         bound[1].merge(y);
+    }
+
+    // input querying polygons, which are made convexs
+    fscanf(in, "%d", &queryPolygonsNum);
+    for (int i = 0; i < queryPolygonsNum; ++i) {
+        convexs.push_back(Polygon::Convex::FromInput(in));
+        auto [xBound, yBound] = convexs.back().bounds();
+        bound[0].merge(xBound);
+        bound[1].merge(yBound);
     }
 
     for (int i = 0; i < 2; ++i) {
@@ -238,24 +277,12 @@ static void input() {
     };
 
     std::for_each_n(points, verticesNum, lerp);
-
-    // input querying polygons, which are made convexs
-    // fscanf(in, "%d", &queryPolygonsNum);
-    // std::vector<Polygon::Convex> convexs;
-    // for (int i = 0; i < queryPolygonsNum; ++i) {
-    //     convexs.push_back(Polygon::Convex::FromInput(in));
-    //     auto [xBound, yBound] = convexs.back().bounds();
-    //     bound[0].merge(xBound);
-    //     bound[1].merge(yBound);
-    // }
-
-    // clang-format off
-    static const float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f
-    };
-    // clang-format on
+    for (auto &convex : convexs) {
+        auto &vertices = convex.pubVertices();
+        for_each(vertices.begin(), vertices.end(), lerp);
+        convex.genVAO();
+        convex.program = shaderProgram;
+    }
 
     glGenBuffers(1, &pointsVBO);
     glGenVertexArrays(1, &pointsVAO);

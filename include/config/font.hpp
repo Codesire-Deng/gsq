@@ -2,7 +2,7 @@
 
 namespace Config {
 
-const char *fontFamily[] = {
+constexpr char *fontFamily[] = {
     "c:\\Windows\\Fonts\\FiraCode-Retina.ttf",
     "C:\\Users\\ps_v5\\AppData\\Local\\Microsoft"
     "\\Windows\\Fonts\\FiraCode-Retina.ttf",

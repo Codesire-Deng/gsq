@@ -1,3 +1,9 @@
+## 进度
+
+输入点、凸多边形，并显示它们
+
+![select_points_demo](/doc/assets/select_points_demo.png)
+
 ## 额外依赖项
 
 1. Boost: GIL 用于读写 PNG 格式图片
@@ -86,7 +92,7 @@ $$
 
 #### 选点 
 
-![select_points](./assets/select_points.png)
+![select_points](./doc/assets/select_points.png)
 
 $C_{i}(x, y)[0]=\left\{\begin{array}{ll}(i d, 1,0) & \text { if }(x, y)=\left(x_{i}, y_{i}\right) \\ \emptyset & \text { otherwise }\end{array}\right.$
 
@@ -102,7 +108,7 @@ $M_{p}=\left\{s \in S^{3} \mid s[0] \neq \emptyset\right.$ and $\left.s[2][0]=1\
 
 #### 选多边形
 
-![select_polygons](./assets/select_polygons.png)
+![select_polygons](./doc/assets/select_polygons.png)
 
 $\begin{aligned} C_{i}(x, y)[0] &=C_{i}(x, y)[1]=\emptyset \\ C_{i}(x, y)[2] &=\left\{\begin{array}{ll}(i d, 1,0) & \text { if }(x, y) \text { falls inside } Y_{i} \\ \emptyset & \text { otherwise }\end{array}\right.\end{aligned}$
 

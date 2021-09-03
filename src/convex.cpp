@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <convex.hpp>
 #include <iostream>
 
@@ -24,13 +25,40 @@ Convex Convex::FromInput(FILE *const in) {
     return result;
 }
 
-std::pair<Bound<float>, Bound<float>> Convex::bounds() const {
+[[nodiscard]] std::pair<Bound<float>, Bound<float>> Convex::bounds() const {
     Bound<float> bound[2];
     for (const auto &v : vertices) {
         bound[0].merge(v.x());
         bound[1].merge(v.y());
     }
     return std::make_pair(bound[0], bound[1]);
+}
+
+void Convex::genVAO() {
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        vertices.size() * sizeof(Vertex),
+        vertices.front().data(),
+        GL_STATIC_DRAW);
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void Convex::draw() const {
+    glUseProgram(program);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)vertices.size());
+    glBindVertexArray(0);
 }
 
 } // namespace Polygon

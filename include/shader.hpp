@@ -10,7 +10,7 @@ class Shader {
     inline operator GLuint() const { return id(); };
     virtual ~Shader();
     void clear();
-    
+
     const std::string filename;
 
   protected:

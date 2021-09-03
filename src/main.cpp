@@ -119,7 +119,8 @@ int main() {
 
             ImGui::Text(
                 "Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);
             ImGui::Text("glfwGetTime %.3f s", glfwGetTime());
             ImGui::End();
         }
@@ -144,8 +145,10 @@ int main() {
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(
-            clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-            clear_color.z * clear_color.w, clear_color.w);
+            clear_color.x * clear_color.w,
+            clear_color.y * clear_color.w,
+            clear_color.z * clear_color.w,
+            clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
         Work::workload();

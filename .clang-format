@@ -4,30 +4,32 @@ IndentWidth: 4
 TabWidth: 4
 Language: Cpp
 AlignAfterOpenBracket: AlwaysBreak
+# AlignArrayOfStructures: Right   unknown key
 # AlignConsecutiveBitFields: true
-AlignConsecutiveMacros: true
+AlignConsecutiveMacros: Consecutive
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowShortBlocksOnASingleLine: Always
+AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 # AllowShortEnumsOnASingleLine: true    unknown key
 AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: Always
 AllowShortLambdasOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: true
-AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: true
+BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
-BreakInheritanceList: BeforeColon
+BreakInheritanceList: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 80
 CompactNamespaces: false
@@ -45,7 +47,9 @@ IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: Inner
+# PackConstructorInitializers: NextLine   unknown
 PointerAlignment: Right
+# ReferenceAlignment: Right     unknown
 ReflowComments: true
 SortIncludes:    false
 SortUsingDeclarations: false

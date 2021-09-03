@@ -9,7 +9,11 @@
 
 #include <iostream>
 #include <optional>
+#include <algorithm>
+#include <filesystem>
 #include <version/version.hpp>
+#include <config/font.hpp>
+#include <config/config.hpp>
 
 #include <Eigen/Dense>
 #include <convex.hpp>
@@ -22,15 +26,15 @@ framebuffer_size_callback(GLFWwindow *window, int width, int height);
 static void processInput(GLFWwindow *window, const ImGuiIO &io);
 
 // settings
-constexpr unsigned int SCR_WIDTH = 1280;
-constexpr unsigned int SCR_HEIGHT = 720;
+constexpr unsigned int SCR_WIDTH = 1000;
+constexpr unsigned int SCR_HEIGHT = 1000;
 
 static GLFWwindow *initWindow();
 static ImGuiIO &initImGui(GLFWwindow *window);
 
 namespace Work {
 
-using real = float;
+int verticesNum, queryPolygonsNum;
 
 GLuint pointsVBO, pointsVAO;
 GLuint shaderProgram;
@@ -47,11 +51,9 @@ int main() {
 
     printGLVersion();
 
-    std::cout << Eigen::Matrix3d::Constant(1.2) << std::endl;
-
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
+    bool show_demo_window = false;
+    // bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     Work::input();
@@ -84,9 +86,8 @@ int main() {
         // 2. Show a simple window that we create ourselves. We use a Begin/End
         // pair to created a named window.
         {
-            static float f = 0.0f;
-            static int counter = 0;
-
+            // static float f = 0.0f;
+            // static int counter = 0;
             ImGui::Begin("Hello, world!"); // Create a window called "Hello,
                                            // world!" and append into it.
 
@@ -96,29 +97,35 @@ int main() {
             ImGui::Checkbox(
                 "Demo Window", &show_demo_window); // Edit bools storing our
                                                    // window open/close state
+            /*
             ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SliderFloat(
                 "float", &f, 0.0f,
                 1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+            */
             ImGui::ColorEdit3(
                 "clear color",
                 (float *)&clear_color); // Edit 3 floats representing a color
 
+            /*
             if (ImGui::Button(
                     "Button")) // Buttons return true when clicked (most widgets
                                // return true when edited/activated)
                 counter++;
             ImGui::SameLine();
             ImGui::Text("counter = %d", counter);
+            */
 
             ImGui::Text(
                 "Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Text("glfwGetTime %.3f s", glfwGetTime());
             ImGui::End();
         }
 
         // 3. Show another simple window.
+        /*
         if (show_another_window) {
             ImGui::Begin(
                 "Another Window",
@@ -129,6 +136,7 @@ int main() {
             if (ImGui::Button("Close Me")) show_another_window = false;
             ImGui::End();
         }
+        */
 
         // Rendering
         ImGui::Render();
@@ -164,7 +172,9 @@ namespace Work {
 static void workload() {
     glUseProgram(shaderProgram);
     glBindVertexArray(pointsVAO);
-    glDrawArrays(GL_POINTS, 0, 3);
+    const int num = int(glfwGetTime()) % verticesNum + 1;
+    glDrawArrays(GL_POINTS, 0, num);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, num);
 }
 
 static void input() {
@@ -194,7 +204,6 @@ static void input() {
     constexpr int MAX_VERT = 32;
     using Point = Eigen::Matrix<real, 3, 1>;
     static Point points[MAX_VERT];
-    int verticesNum, queryPolygonsNum;
     Bound<real> bound[2];
 
     FILE *in = fopen("data/select_points.txt", "r");
@@ -209,25 +218,23 @@ static void input() {
         bound[1].merge(y);
     }
 
-    for (int i=0; i<2; ++i) {
+    for (int i = 0; i < 2; ++i) {
         bound[i].lowerBound -= 5.0f;
         bound[i].upperBound += 5.0f;
     }
 
-    const real ratio[2] = {
+    const real ratio = (real)std::min<double>(
         1.0 / (bound[0].upperBound - bound[0].lowerBound) * (1.0f - (-1.0f)),
-        1.0 / (bound[1].upperBound - bound[1].lowerBound) * (1.0f - (-1.0f)),
-    };
+        1.0 / (bound[1].upperBound - bound[1].lowerBound) * (1.0f - (-1.0f)));
+
+    // scale all coordinates to [-1.0, 1.0]
     const auto &lerp = [&](Point &point) {
         for (int i = 0; i < 2; ++i) {
-            point[i] = (point[i] - bound[i].lowerBound) * ratio[i] - 1.0f;
+            point[i] = (point[i] - bound[i].lowerBound) * ratio - 1.0f;
         }
     };
 
-    for (int i = 0; i < verticesNum; ++i) {
-        lerp(points[i]);
-        std::cout << points[i] << std::endl;
-    }
+    std::for_each_n(points, verticesNum, lerp);
 
     // input querying polygons, which are made convexs
     // fscanf(in, "%d", &queryPolygonsNum);
@@ -369,14 +376,18 @@ static ImGuiIO &initImGui(GLFWwindow *window) {
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string
     // literal you need to write a double backslash \\ !
-    // io.Fonts->AddFontDefault();
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    // ImFont* font =
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f,
-    // NULL, io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != NULL);
+
+    {
+        bool found = false;
+        for (const char *filename : Config::fontFamily) {
+            if (std::filesystem::exists(filename)
+                && io.Fonts->AddFontFromFileTTF(filename, 18.0f) != nullptr) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) io.Fonts->AddFontDefault();
+    }
 
     return io;
 }

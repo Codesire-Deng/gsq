@@ -14,7 +14,7 @@ class Program final {
     Program(){};
 
     template<typename... S>
-    Program(const S &...shader) : programId(glCreateProgram()) {
+    explicit Program(const S &...shader) : programId(glCreateProgram()) {
         attach(shader...);
     }
 

@@ -9,7 +9,7 @@ class Mesh {
     // virtual void bindVAO() = 0;
     virtual void draw() const = 0;
 
-    Program program = 0;
+    Program program;
 
     inline void useProgram() const { program.use(); }
 };

@@ -19,6 +19,7 @@
 #include <Eigen/Dense>
 #include <convex.hpp>
 #include <shader.hpp>
+#include <program.hpp>
 #include <bound.hpp>
 
 static void glfw_error_callback(int error, const char *description);
@@ -40,7 +41,7 @@ int verticesNum, queryPolygonsNum;
 Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(0.5f, 0.5f, 1.0f);
 
 GLuint pointsVBO, pointsVAO;
-GLuint shaderProgram;
+Program program;
 float pointSize = 10.0f;
 int customColorLocation = -1;
 
@@ -53,9 +54,7 @@ static void workload();
 
 int main() {
     GLFWwindow *window = initWindow();
-
     ImGuiIO &io = initImGui(window);
-
     printGLVersion();
 
     // Our state
@@ -126,15 +125,6 @@ int main() {
                 "Clear color",
                 (float *)&clear_color); // Edit 3 floats representing a color
 
-            /*
-            if (ImGui::Button(
-                    "Button")) // Buttons return true when clicked (most widgets
-                               // return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-            */
-
             ImGui::Text(
                 "Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate,
@@ -142,20 +132,6 @@ int main() {
             ImGui::Text("glfwGetTime %.3f s", glfwGetTime());
             ImGui::End();
         }
-
-        // 3. Show another simple window.
-        /*
-        if (show_another_window) {
-            ImGui::Begin(
-                "Another Window",
-                &show_another_window); // Pass a pointer to our bool variable
-                                       // (the window will have a closing button
-                                       // that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me")) show_another_window = false;
-            ImGui::End();
-        }
-        */
 
         // Rendering
         ImGui::Render();
@@ -191,18 +167,16 @@ int main() {
 namespace Work {
 
 static void workload() {
-    glUseProgram(shaderProgram);
+    program.use();
     glUniform3fv(customColorLocation, 1, polygonColor.data());
     // draw convexs
     for (const auto &c : convexs) { c.draw(); }
 
-    glUseProgram(shaderProgram);
+    program.use();
     glUniform3fv(customColorLocation, 1, pointColor.data());
     // draw points
     {
-        glUseProgram(shaderProgram);
         glBindVertexArray(pointsVAO);
-        // const int num = int(glfwGetTime()) % verticesNum + 1;
         glPointSize(pointSize);
         glDrawArrays(GL_POINTS, 0, verticesNum);
     }
@@ -211,29 +185,12 @@ static void workload() {
 static void input() {
     using namespace std::views;
     // construct shader and program
-    // vShader.emplace(VertexShader("shader/point.vert"));
-    // fShader.emplace(FragmentShader("shader/point.frag"));
     VertexShader vShader("shader/point.vert");
     FragmentShader fShader("shader/point.frag");
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vShader);
-    glAttachShader(shaderProgram, fShader);
-    glLinkProgram(shaderProgram);
-#ifdef DEBUG
-    {
-        using namespace std;
-        static int success;
-        static char infoLog[512];
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(shaderProgram, 512, nullptr, infoLog);
-            cerr << "create_shader: compile failed:\n" << infoLog << endl;
-            exit(1);
-        }
-    }
-#endif
+    program.init().attach(vShader, fShader).link().assertAvailable();
+
     // prepare to set color uniform
-    customColorLocation = glGetUniformLocation(shaderProgram, "customColor");
+    customColorLocation = glGetUniformLocation(program, "customColor");
 
     constexpr int MAX_VERT = 32;
     static Point points[MAX_VERT];
@@ -280,7 +237,7 @@ static void input() {
         auto &vertices = convex.pubVertices();
         std::ranges::for_each(vertices, lerp);
         convex.genVAO();
-        convex.program = shaderProgram;
+        convex.program = program;
     }
 
     glGenBuffers(1, &pointsVBO);

@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <program.hpp>
 
 class Mesh {
   public:
@@ -9,5 +9,7 @@ class Mesh {
     // virtual void bindVAO() = 0;
     virtual void draw() const = 0;
 
-    unsigned int program = 0;
+    Program program = 0;
+
+    inline void useProgram() const { program.use(); }
 };

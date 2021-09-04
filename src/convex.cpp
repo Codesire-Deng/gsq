@@ -25,8 +25,8 @@ Convex Convex::FromInput(FILE *const in) {
     return result;
 }
 
-[[nodiscard]] std::pair<Bound<float>, Bound<float>> Convex::bounds() const {
-    Bound<float> bound[2];
+[[nodiscard]] std::pair<Bound<real>, Bound<real>> Convex::bounds() const {
+    Bound<real> bound[2];
     for (const auto &v : vertices) {
         bound[0].merge(v.x());
         bound[1].merge(v.y());
@@ -55,7 +55,6 @@ void Convex::genVAO() {
 }
 
 void Convex::draw() const {
-    glUseProgram(program);
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)vertices.size());
     glBindVertexArray(0);

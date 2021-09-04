@@ -11,6 +11,7 @@
 #include <optional>
 #include <algorithm>
 #include <filesystem>
+#include <ranges>
 #include <version/version.hpp>
 #include <config/font.hpp>
 #include <config/config.hpp>
@@ -193,9 +194,7 @@ static void workload() {
     glUseProgram(shaderProgram);
     glUniform3fv(customColorLocation, 1, polygonColor.data());
     // draw convexs
-    std::for_each(convexs.begin(), convexs.end(), [](const auto &convex) {
-        convex.draw();
-    });
+    for (const auto &c : convexs) { c.draw(); }
 
     glUseProgram(shaderProgram);
     glUniform3fv(customColorLocation, 1, pointColor.data());
@@ -210,6 +209,7 @@ static void workload() {
 }
 
 static void input() {
+    using namespace std::views;
     // construct shader and program
     // vShader.emplace(VertexShader("shader/point.vert"));
     // fShader.emplace(FragmentShader("shader/point.frag"));
@@ -243,10 +243,9 @@ static void input() {
 
     // input points to be queried
     fscanf(in, "%d", &verticesNum);
-    for (int i = 0; i < verticesNum; ++i) {
-        float x, y;
+    for (float x, y; auto &point : points | take(verticesNum)) {
         fscanf(in, "%f%f", &x, &y);
-        points[i] << x, y, 0.0f;
+        point << x, y, 0.0f;
         bound[0].merge(x);
         bound[1].merge(y);
     }
@@ -279,7 +278,7 @@ static void input() {
     std::for_each_n(points, verticesNum, lerp);
     for (auto &convex : convexs) {
         auto &vertices = convex.pubVertices();
-        for_each(vertices.begin(), vertices.end(), lerp);
+        std::ranges::for_each(vertices, lerp);
         convex.genVAO();
         convex.program = shaderProgram;
     }
@@ -377,7 +376,7 @@ static ImGuiIO &initImGui(GLFWwindow *window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void)io;
+
     // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable
     // Keyboard Controls io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; //
     // Enable Gamepad Controls
@@ -409,12 +408,13 @@ static ImGuiIO &initImGui(GLFWwindow *window) {
 
     {
         bool found = false;
-        for (const char *filename : Config::fontFamily) {
-            if (std::filesystem::exists(filename)
-                && io.Fonts->AddFontFromFileTTF(filename, 18.0f) != nullptr) {
-                found = true;
-                break;
-            }
+        auto exists = [&io](const char *filename) {
+            return std::filesystem::exists(filename)
+                   && io.Fonts->AddFontFromFileTTF(filename, 18.0f) != nullptr;
+        };
+        using namespace std::views;
+        for (auto filename : Config::fontFamily | filter(exists) | take(1)) {
+            found = true;
         }
         if (!found) io.Fonts->AddFontDefault();
     }

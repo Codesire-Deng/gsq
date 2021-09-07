@@ -14,7 +14,8 @@
 #include <ranges>
 #include <version/version.hpp>
 #include <config/font.hpp>
-#include <config/config.hpp>
+#include <config/type.hpp>
+#include <config/gl.hpp>
 
 #include <Eigen/Dense>
 #include <convex.hpp>
@@ -36,6 +37,8 @@ static ImGuiIO &initImGui(GLFWwindow *window);
 
 namespace Work {
 
+using namespace Config::Type;
+
 int verticesNum, queryPolygonsNum;
 
 Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(0.5f, 0.5f, 1.0f);
@@ -56,6 +59,7 @@ int main() {
     GLFWwindow *window = initWindow();
     ImGuiIO &io = initImGui(window);
     printGLVersion();
+    logGlIsEnabled(GL_SCISSOR_TEST);
 
     // Our state
     bool show_demo_window = false;
@@ -202,7 +206,7 @@ static void input() {
     fscanf(in, "%d", &verticesNum);
     for (float x, y; auto &point : points | take(verticesNum)) {
         fscanf(in, "%f%f", &x, &y);
-        point << x, y, 0.0f;
+        point << x, y;
         bound[0].merge(x);
         bound[1].merge(y);
     }
@@ -251,7 +255,7 @@ static void input() {
     // GL_STATIC_DRAW);
 
     glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real), (void *)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -297,6 +301,9 @@ static GLFWwindow *initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if constexpr (ENABLE_MSAA) {
+        glfwWindowHint(GLFW_SAMPLES, 4);
+    }
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -323,6 +330,11 @@ static GLFWwindow *initWindow() {
         // return -1;
         return nullptr;
     }
+
+    if constexpr (ENABLE_MSAA) {
+        logGlEnable(GL_MULTISAMPLE);
+    }
+
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     return window;

@@ -4,10 +4,12 @@
 #include <vector>
 #include <iostream>
 #include <bound.hpp>
-#include <config/config.hpp>
+#include <config/type.hpp>
 #include <mesh.hpp>
 
 namespace Polygon {
+
+using namespace Config::Type;
 
 class Convex : public Mesh {
   public:

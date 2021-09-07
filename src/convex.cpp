@@ -11,7 +11,7 @@ Convex Convex::FromInput(FILE *const in) {
     for (int i = 0, idx = 0, step = 2; i < verticesNum; ++i) {
         float x, y;
         fscanf(in, "%f%f", &x, &y);
-        result.vertices[idx] << x, y, 0.0f;
+        result.vertices[idx] << x, y;
         idx += step;
         if (idx == verticesNum) {
             --idx;
@@ -47,7 +47,7 @@ void Convex::genVAO() {
         vertices.front().data(),
         GL_STATIC_DRAW);
     glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real), (void *)0);
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);

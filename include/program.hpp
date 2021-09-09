@@ -16,6 +16,8 @@ class Program final {
     template<typename... S>
     explicit Program(const S &...shader) : programId(glCreateProgram()) {
         attach(shader...);
+        link();
+        assertAvailable();
     }
 
     template<typename S, typename... Ss>

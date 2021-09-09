@@ -4,33 +4,34 @@
 #include <imgui/imgui.h>
 // #include "imgui/imgui_impl_glfw.h"
 // #include "imgui/imgui_impl_opengl3.h"
-
 #include <boost/gil.hpp>
+#include <Eigen/Dense>
 
 #include <iostream>
 #include <optional>
 #include <algorithm>
 #include <filesystem>
 #include <ranges>
-#include <version/version.hpp>
-#include <config/font.hpp>
+
+#include <config/data.hpp>
 #include <config/type.hpp>
 #include <config/gl.hpp>
+#include <version/version.hpp>
 
-#include <Eigen/Dense>
-#include <convex.hpp>
 #include <shader.hpp>
 #include <program.hpp>
+#include <uniform.hpp>
+
 #include <bound.hpp>
+#include <convex.hpp>
+#include <canvas.hpp>
+
+#include <model/canvasGen.hpp>
 
 static void glfw_error_callback(int error, const char *description);
 static void
 framebuffer_size_callback(GLFWwindow *window, int width, int height);
 static void processInput(GLFWwindow *window, const ImGuiIO &io);
-
-// settings
-constexpr unsigned int SCR_WIDTH = 1000;
-constexpr unsigned int SCR_HEIGHT = 1000;
 
 static GLFWwindow *initWindow();
 static ImGuiIO &initImGui(GLFWwindow *window);
@@ -44,7 +45,10 @@ int verticesNum, queryPolygonsNum;
 Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(0.5f, 0.5f, 1.0f);
 
 GLuint pointsVBO, pointsVAO;
-Program program;
+Program pointProgram, canvasGenProgram;
+UCanvasGen uCanvasGen;
+Config::Type::SData mouseSData;
+int mouseX = 0, mouseY = 0;
 float pointSize = 10.0f;
 int customColorLocation = -1;
 
@@ -66,7 +70,7 @@ int main() {
     // bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Work::input();
+    checkGlError(Work::input());
 
     // glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -98,12 +102,9 @@ int main() {
         {
             // static float f = 0.0f;
             // static int counter = 0;
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello,
-                                           // world!" and append into it.
+            ImGui::Begin("Debug Info"); // Create a window called "Hello,
+                                        // world!" and append into it.
 
-            ImGui::Text(
-                "This is some useful text."); // Display some text (you can use
-                                              // a format strings too)
             ImGui::Checkbox(
                 "Demo Window", &show_demo_window); // Edit bools storing our
                                                    // window open/close state
@@ -134,6 +135,21 @@ int main() {
                 1000.0f / ImGui::GetIO().Framerate,
                 ImGui::GetIO().Framerate);
             ImGui::Text("glfwGetTime %.3f s", glfwGetTime());
+            if (ImGui::IsMousePosValid() && !io.WantCaptureMouse
+                && 0 <= io.MousePos.x && io.MousePos.x < Config::SCR_WIDTH
+                && 0 <= io.MousePos.y && io.MousePos.y < Config::SCR_HEIGHT) {
+                using namespace Work;
+                mouseX = (int)io.MousePos.x;
+                mouseY = Config::SCR_HEIGHT - (int)io.MousePos.y;
+                ImGui::Text("Mouse pos: (%g, %g)", mouseX, mouseY);
+                ImGui::Text(
+                    "[%4d%4d%4d]",
+                    mouseSData.coeff(0, 0),
+                    mouseSData.coeff(0, 1),
+                    mouseSData.coeff(0, 2));
+            } else {
+                ImGui::Text("Mouse pos: <INVALID>");
+            }
             ImGui::End();
         }
 
@@ -149,7 +165,7 @@ int main() {
             clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        Work::workload();
+        checkGlError(Work::workload());
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -171,12 +187,32 @@ int main() {
 namespace Work {
 
 static void workload() {
-    program.use();
-    glUniform3fv(customColorLocation, 1, polygonColor.data());
+    static Canvas canvas;
+
+    showGlError();
+
+    // clang-format off
+    static const int sData[3][3] = {
+        {1, 1, 0},
+        {2, 1, 0},
+        {3, 1, 0},
+    };
+    // clang-format on
+
+    uCanvasGen.useProgram();
+    uCanvasGen.sendCustomColor(polygonColor.data())
+        .setSRow0(sData[0])
+        .setSRow1(sData[1])
+        .setSRow2(sData[2])
+        .sendS();
+    showGlError();
+    checkGlError(canvas.bind(0, Access::readWrite));
     // draw convexs
     for (const auto &c : convexs) { c.draw(); }
 
-    program.use();
+    showGlError();
+
+    pointProgram.use();
     glUniform3fv(customColorLocation, 1, pointColor.data());
     // draw points
     {
@@ -184,17 +220,32 @@ static void workload() {
         glPointSize(pointSize);
         glDrawArrays(GL_POINTS, 0, verticesNum);
     }
+
+    showGlError();
+
+    mouseSData = canvas.readS(mouseX, mouseY);
 }
 
 static void input() {
     using namespace std::views;
     // construct shader and program
-    VertexShader vShader("shader/point.vert");
-    FragmentShader fShader("shader/point.frag");
-    program.init().attach(vShader, fShader).link().assertAvailable();
+    VertexShader pointVShader("shader/point.vert");
+    FragmentShader pointFShader("shader/point.frag");
+    pointProgram.init()
+        .attach(pointVShader, pointFShader)
+        .link()
+        .assertAvailable();
+
+    VertexShader canvasGenVShader("shader/canvasGen.vert");
+    FragmentShader canvasGenFShader("shader/canvasGen.frag");
+    canvasGenProgram.init()
+        .attach(canvasGenVShader, canvasGenFShader)
+        .link()
+        .assertAvailable();
 
     // prepare to set color uniform
-    customColorLocation = glGetUniformLocation(program, "customColor");
+    customColorLocation = glGetUniformLocation(pointProgram, "customColor");
+    uCanvasGen.setProgram(canvasGenProgram);
 
     constexpr int MAX_VERT = 32;
     static Point points[MAX_VERT];
@@ -241,7 +292,7 @@ static void input() {
         auto &vertices = convex.pubVertices();
         std::ranges::for_each(vertices, lerp);
         convex.genVAO();
-        convex.program = program;
+        convex.program = pointProgram;
     }
 
     glGenBuffers(1, &pointsVBO);
@@ -301,9 +352,7 @@ static GLFWwindow *initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    if constexpr (ENABLE_MSAA) {
-        glfwWindowHint(GLFW_SAMPLES, 4);
-    }
+    if constexpr (Config::ENABLE_MSAA) { glfwWindowHint(GLFW_SAMPLES, 4); }
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -311,8 +360,8 @@ static GLFWwindow *initWindow() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window =
-        glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(
+        Config::SCR_WIDTH, Config::SCR_HEIGHT, "OpenGL", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -331,11 +380,9 @@ static GLFWwindow *initWindow() {
         return nullptr;
     }
 
-    if constexpr (ENABLE_MSAA) {
-        logGlEnable(GL_MULTISAMPLE);
-    }
+    if constexpr (Config::ENABLE_MSAA) { logGlEnable(GL_MULTISAMPLE); }
 
-    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+    glViewport(0, 0, Config::SCR_WIDTH, Config::SCR_HEIGHT);
 
     return window;
 }
@@ -382,7 +429,8 @@ static ImGuiIO &initImGui(GLFWwindow *window) {
                    && io.Fonts->AddFontFromFileTTF(filename, 18.0f) != nullptr;
         };
         using namespace std::views;
-        for (auto filename : Config::fontFamily | filter(exists) | take(1)) {
+        for (auto filename :
+             Config::Data::fontFamily | filter(exists) | take(1)) {
             found = true;
         }
         if (!found) io.Fonts->AddFontDefault();

@@ -34,9 +34,9 @@ endif(UNIX)
 # END Path to dependencies
 
 # Boost Library
-find_package(Boost REQUIRED)
-include_directories("${Boost_INCLUDE_DIR}")
-message("Boost include dir=${Boost_INCLUDE_DIR}")
+# find_package(Boost REQUIRED)
+# include_directories("${Boost_INCLUDE_DIR}")
+# message("Boost include dir=${Boost_INCLUDE_DIR}")
 # END Boost Library
 
 # Eigen

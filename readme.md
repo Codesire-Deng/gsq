@@ -1,5 +1,9 @@
 ## 进度
 
+支持初始化、写入、直读 Canvas
+
+![select_points_canvas_demo](/doc/assets/select_points_canvas_demo.png)
+
 输入点、凸多边形，并显示它们
 
 ![select_points_demo](/doc/assets/select_points_demo.png)

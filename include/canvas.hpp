@@ -70,7 +70,7 @@ class Canvas final {
     }
 
     inline Config::Type::SData readS(GLint xOffset, GLint yOffset) const {
-        static int sColumn[40];
+        static int sColumn[4];
         Config::Type::SData result;
         const auto &copyColomn = [&,this](int column) {
             showGlError();

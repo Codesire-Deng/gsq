@@ -70,10 +70,11 @@ class Canvas final {
     }
 
     inline Config::Type::SData readS(GLint xOffset, GLint yOffset) const {
-        static int sColumn[4];
+        static int sColumn[40];
         Config::Type::SData result;
         const auto &copyColomn = [&,this](int column) {
-            checkGlError(glGetTextureSubImage(
+            showGlError();
+            glGetTextureSubImage(
                 textureId,
                 0,
                 xOffset,
@@ -82,10 +83,11 @@ class Canvas final {
                 1,
                 1,
                 1,
-                GL_RGBA,
+                FORMAT,
                 TYPE,
                 sizeof(sColumn),
-                sColumn));
+                sColumn);
+            showGlError();
             for (int i = 0; i < 3; ++i) result.coeffRef(i, column) = sColumn[i];
         };
         copyColomn(0);

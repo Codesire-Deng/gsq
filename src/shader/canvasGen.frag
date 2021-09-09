@@ -33,8 +33,8 @@ void main()
         ivec3(gl_FragCoord.x, gl_FragCoord.y, 2),
         ivec4(sColumn2, 0)
     );
-    vec4 receive;
-    receive = imageLoad(canvas, ivec3(gl_FragCoord.x, gl_FragCoord.y, 0));
-    FragColor = vec4(receive.xyz/3.0, 1.0f);
+    // vec4 receive;
+    // receive = imageLoad(canvas, ivec3(gl_FragCoord.x, gl_FragCoord.y, 0));
+    // FragColor = vec4(receive.xyz/3.0, 1.0f);
     // FragColor = vec4(sColumn0.xyz/3.0, 1.0f);
 } 

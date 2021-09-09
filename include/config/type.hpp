@@ -27,6 +27,13 @@ namespace Type {
         static constexpr int depth = depth;
     };
 
+    struct Offset2D final {
+        int x, y;
+        bool operator!=(Offset2D other) {
+            return x != other.x || y != other.y;
+        }
+    };
+
 } // namespace Type
 
 } // namespace Config

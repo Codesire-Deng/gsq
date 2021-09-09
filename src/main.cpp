@@ -42,13 +42,13 @@ using namespace Config::Type;
 
 int verticesNum, queryPolygonsNum;
 
-Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(0.5f, 0.5f, 1.0f);
+Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(1.0f, 1.0f, 0.5f);
 
 GLuint pointsVBO, pointsVAO;
 Program pointProgram, canvasGenProgram;
 UCanvasGen uCanvasGen;
 Config::Type::SData mouseSData;
-int mouseX = 0, mouseY = 0;
+Config::Type::Offset2D mouse, mouseLast;
 float pointSize = 10.0f;
 int customColorLocation = -1;
 
@@ -135,18 +135,26 @@ int main() {
                 1000.0f / ImGui::GetIO().Framerate,
                 ImGui::GetIO().Framerate);
             ImGui::Text("glfwGetTime %.3f s", glfwGetTime());
-            if (ImGui::IsMousePosValid() && !io.WantCaptureMouse
-                && 0 <= io.MousePos.x && io.MousePos.x < Config::SCR_WIDTH
-                && 0 <= io.MousePos.y && io.MousePos.y < Config::SCR_HEIGHT) {
+
+            if (int mx = (int)io.MousePos.x, my = (int)io.MousePos.y;
+                ImGui::IsMousePosValid() && !io.WantCaptureMouse && 0 <= mx
+                && mx < Config::SCR_WIDTH && 0 <= my
+                && my < Config::SCR_HEIGHT) {
                 using namespace Work;
-                mouseX = (int)io.MousePos.x;
-                mouseY = Config::SCR_HEIGHT - (int)io.MousePos.y;
-                ImGui::Text("Mouse pos: (%g, %g)", mouseX, mouseY);
+                mouse.x = mx;
+                mouse.y = Config::SCR_HEIGHT - 1 - my;
+                ImGui::Text("Mouse pos: (%d, %d)", mouse.x, mouse.y);
                 ImGui::Text(
-                    "[%4d%4d%4d]",
+                    "[%4d%4d%4d]\n[%4d%4d%4d]\n[%4d%4d%4d]",
                     mouseSData.coeff(0, 0),
                     mouseSData.coeff(0, 1),
-                    mouseSData.coeff(0, 2));
+                    mouseSData.coeff(0, 2),
+                    mouseSData.coeff(1, 0),
+                    mouseSData.coeff(1, 1),
+                    mouseSData.coeff(1, 2),
+                    mouseSData.coeff(2, 0),
+                    mouseSData.coeff(2, 1),
+                    mouseSData.coeff(2, 2));
             } else {
                 ImGui::Text("Mouse pos: <INVALID>");
             }
@@ -223,7 +231,10 @@ static void workload() {
 
     showGlError();
 
-    mouseSData = canvas.readS(mouseX, mouseY);
+    if (mouse != mouseLast) {
+        mouseSData = canvas.readS(mouse.x, mouse.y);
+        mouseLast = mouse;
+    }
 }
 
 static void input() {

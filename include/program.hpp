@@ -46,7 +46,7 @@ class Program final {
         glGetProgramiv(programId, GL_LINK_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(programId, 512, nullptr, infoLog);
-            cerr << "create_shader: compile failed:\n" << infoLog << endl;
+            cerr << "createShader: compile failed:\n" << infoLog << endl;
             exit(1);
         }
 #endif

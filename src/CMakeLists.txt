@@ -9,7 +9,7 @@ add_subdirectory(./ThirdParty)
 aux_source_directory(./model MODELS)
 
 # main.cpp -> main.exe （当然还需要链接各种库）
-add_executable(main data.cpp ${MODELS} main.cpp glad.c convex.cpp shader.cpp )
+add_executable(main data.cpp ${MODELS} main.cpp glad.c convex.cpp )
 
 # 链接自定义库
 # target_link_libraries(main PRIVATE common object)

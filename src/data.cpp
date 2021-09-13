@@ -1,4 +1,5 @@
 #include <config/data.hpp>
+#include <unordered_map>
 
 namespace Config {
 
@@ -17,3 +18,8 @@ namespace Data {
 } // namespace Data
 
 } // namespace Config
+
+namespace impl_Shader {
+using GLuint = unsigned int;
+std::unordered_map<std::string, GLuint> shaderCache;
+}

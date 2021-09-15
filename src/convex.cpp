@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace Polygon {
-Convex Convex::FromInput(FILE *const in) {
+[[nodiscard]] Convex Convex::FromInput(FILE *const in) {
     Convex result;
     int verticesNum;
     fscanf(in, "%d", &verticesNum);
@@ -24,6 +24,8 @@ Convex Convex::FromInput(FILE *const in) {
 
     return result;
 }
+
+
 
 [[nodiscard]] std::pair<Bound<real>, Bound<real>> Convex::bounds() const {
     Bound<real> bound[2];

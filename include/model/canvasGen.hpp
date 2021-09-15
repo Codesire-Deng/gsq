@@ -20,7 +20,4 @@ class UCanvasGen : public Uniform {
     GLuint lSColumn2;
 
     int sData[3][3];
-
-    // image
-    const GLuint bindingCanvas = 0;
 };

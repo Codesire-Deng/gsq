@@ -1,12 +1,15 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <iostream>
+
 namespace Config {
 
 constexpr unsigned int SCR_WIDTH = 1024;
 constexpr unsigned int SCR_HEIGHT = 1024;
 
 constexpr bool ENABLE_MSAA = true;
+constexpr bool RELEASE_SHADER = true;
 
 } // namespace Config
 
@@ -26,7 +29,7 @@ constexpr bool ENABLE_MSAA = true;
 
 namespace Config {
 
-bool impl_checkGlError() {
+inline bool impl_checkGlError() {
     const GLenum err = glGetError();
     if (err == 0) return false;
 #ifdef DEBUG

@@ -15,7 +15,7 @@ enum class Access : GLenum {
 };
 
 template<
-    typename Size = Config::Type::Size2D<Config::SCR_WIDTH, Config::SCR_HEIGHT>>
+    typename Size2D = Config::Type::Size2D<Config::SCR_WIDTH, Config::SCR_HEIGHT>>
 class Canvas final {
   public:
     static constexpr int COLUMN_SIZE = 3;
@@ -29,8 +29,8 @@ class Canvas final {
             textureId,
             1,
             INTERNAL_FORMAT,
-            Size::width,
-            Size::height,
+            Size2D::width,
+            Size2D::height,
             COLUMN_SIZE);
         clear();
     }
@@ -96,6 +96,8 @@ class Canvas final {
         return result;
     }
 
+  public:
+    
   private:
     GLuint textureId = 0;
 };

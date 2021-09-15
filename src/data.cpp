@@ -4,6 +4,7 @@
 namespace Config {
 
 namespace Data {
+    // clang-format off
     // 16x32 bits
     const unsigned int zero[16] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -15,6 +16,12 @@ namespace Data {
         "c:\\Windows\\Fonts\\consola.ttf",
         "c:\\Windows\\Fonts\\cour.ttf",
         "c:\\Windows\\Fonts\\arial.ttf"};
+
+    const float fullScreenVertices[8] = {
+        -1.0f, -1.0f, 1.0f, -1.0f, 
+        1.0f, 1.0f, -1.0f, 1.0f
+    };
+    // clang-format on
 } // namespace Data
 
 } // namespace Config

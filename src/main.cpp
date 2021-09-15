@@ -23,10 +23,12 @@
 #include <uniform.hpp>
 
 #include <bound.hpp>
+#include <polygon.hpp>
 #include <convex.hpp>
 #include <canvas.hpp>
 
 #include <model/canvasGen.hpp>
+#include <model/canvasOp.hpp>
 
 static void glfw_error_callback(int error, const char *description);
 static void
@@ -51,9 +53,15 @@ Config::Type::SData mouseSData;
 Config::Type::Offset2D mouse, mouseLast;
 float pointSize = 10.0f;
 int customColorLocation = -1;
+Bound<Config::Type::real> bound[2];
 
-std::vector<Polygon::Convex> convexs;
+Polygon::Polygon p0, p1, p2;
 
+Polygon::Convex fullScreenConvex =
+    Polygon::Convex::FromArray(Config::Data::fullScreenVertices);
+
+static void inputPoints();
+static void inputPolygons();
 static void input();
 static void workload();
 
@@ -216,7 +224,7 @@ static void workload() {
     showGlError();
     checkGlError(canvas.bind(0, Access::readWrite));
     // draw convexs
-    for (const auto &c : convexs) { c.draw(); }
+    p0.draw();
 
     showGlError();
 
@@ -237,30 +245,11 @@ static void workload() {
     }
 }
 
-static void input() {
+static void inputPoints() {
     using namespace std::views;
-    // construct shader and program
-    VertexShader pointVShader("shader/point.vert");
-    FragmentShader pointFShader("shader/point.frag");
-    pointProgram.init()
-        .attach(pointVShader, pointFShader)
-        .link()
-        .assertAvailable();
-
-    VertexShader canvasGenVShader("shader/canvasGen.vert");
-    FragmentShader canvasGenFShader("shader/canvasGen.frag");
-    canvasGenProgram.init()
-        .attach(canvasGenVShader, canvasGenFShader)
-        .link()
-        .assertAvailable();
-
-    // prepare to set color uniform
-    customColorLocation = glGetUniformLocation(pointProgram, "customColor");
-    uCanvasGen.setProgram(canvasGenProgram);
-
     constexpr int MAX_VERT = 32;
     static Point points[MAX_VERT];
-    Bound<real> bound[2];
+    std::vector<Polygon::Convex> convexs;
 
     FILE *in = fopen("data/select_points.txt", "r");
 
@@ -299,12 +288,14 @@ static void input() {
     };
 
     std::for_each_n(points, verticesNum, lerp);
-    for (auto &convex : convexs) {
-        auto &vertices = convex.pubVertices();
-        std::ranges::for_each(vertices, lerp);
-        convex.genVAO();
-        convex.program = pointProgram;
-    }
+    // for (auto &convex : convexs) {
+    //     auto &vertices = convex.pubVertices();
+    //     std::ranges::for_each(vertices, lerp);
+    // }
+
+    p0 = Polygon::Polygon(std::move(convexs));
+    p0.adjustVertices(lerp);
+    p0.genVAO();
 
     glGenBuffers(1, &pointsVBO);
     glGenVertexArrays(1, &pointsVAO);
@@ -326,6 +317,35 @@ static void input() {
     // call to glBindVertexArray anyways so we generally don't unbind VAOs (nor
     // VBOs) when it's not directly necessary.
     glBindVertexArray(0);
+}
+
+static void inputPolygons() {
+
+}
+
+static void input() {
+    fullScreenConvex.genVAO();
+
+    // construct shader and program
+    VertexShader pointVShader("shader/point.vert");
+    FragmentShader pointFShader("shader/point.frag");
+    pointProgram.init()
+        .attach(pointVShader, pointFShader)
+        .link()
+        .assertAvailable();
+
+    VertexShader canvasGenVShader("shader/canvasGen.vert");
+    FragmentShader canvasGenFShader("shader/canvasGen.frag");
+    canvasGenProgram.init()
+        .attach(canvasGenVShader, canvasGenFShader)
+        .link()
+        .assertAvailable();
+
+    // prepare to set color uniform
+    customColorLocation = glGetUniformLocation(pointProgram, "customColor");
+    uCanvasGen.setProgram(canvasGenProgram);
+
+    inputPoints();
 }
 
 } // namespace Work

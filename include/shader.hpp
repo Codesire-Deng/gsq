@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <config/gl.hpp>
 #include <unordered_map>
 #include <string>
 #include <iostream>
@@ -53,15 +54,18 @@ class Shader final {
 
     inline void clear() {
         if (filename.empty()) return;
-        glDeleteShader(shaderId);
-        shaderCache.erase(filename);
+        if constexpr (!Config::RELEASE_SHADER) {
+            glDeleteShader(shaderId);
+            shaderCache.erase(filename);
+        }
     }
 
   public:
     Shader() = delete;
 
     // 自带缓存
-    inline Shader(std::string filename) : shaderId(0), filename(std::move(filename)) {
+    inline Shader(std::string filename)
+        : shaderId(0), filename(std::move(filename)) {
         const std::string &name = this->filename;
         auto it = shaderCache.find(name);
         if (it != shaderCache.end()) {

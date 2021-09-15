@@ -46,7 +46,7 @@ class Convex : public Mesh {
     virtual void draw() const override;
 
     template<typename F>
-    Convex &adjustVertices(const F &f) {
+    Convex &adjustVertices(const F &f) requires std::invocable<F, Vertex &> {
         for (auto &v : vertices) { f(v); }
         return *this;
     }

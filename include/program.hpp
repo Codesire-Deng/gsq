@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <shader.hpp>
+#include <concepts>
 #ifdef DEBUG
 #include <iostream>
 #include <cassert>
@@ -14,6 +15,7 @@ class Program final {
     Program(){};
 
     template<typename... S>
+    requires std::convertible_to<S..., GLuint>
     explicit Program(const S &...shader) : programId(glCreateProgram()) {
         attach(shader...);
         link();
@@ -21,7 +23,8 @@ class Program final {
     }
 
     template<typename S, typename... Ss>
-    Program &attach(const S &shader, const Ss &...shaders) {
+    Program &attach(const S &shader, const Ss &...shaders) requires
+        std::convertible_to<S, GLuint> {
         glAttachShader(programId, shader);
         if constexpr (sizeof...(shaders) > 0) { attach(shaders...); }
         return *this;
@@ -33,7 +36,10 @@ class Program final {
         return *this;
     }
 
-    inline Program &link() { glLinkProgram(programId); return *this; }
+    inline Program &link() {
+        glLinkProgram(programId);
+        return *this;
+    }
 
     inline void use() const { glUseProgram(programId); }
 

@@ -2,6 +2,7 @@
 
 #include <convex.hpp>
 #include <vector>
+#include <concepts>
 
 namespace Polygon {
 
@@ -38,13 +39,12 @@ class Polygon final : public Mesh {
     }
 
     template<typename F>
-    Polygon &adjustVertices(const F &f) {
+    Polygon &adjustVertices(const F &f) requires std::invocable<F, Vertex &> {
         for (auto &c : convexs) { c.adjustVertices(f); }
         return *this;
     }
 
-  private:
-    std::vector<Convex> convexs;
+  private : std::vector<Convex> convexs;
 };
 
 } // namespace Polygon

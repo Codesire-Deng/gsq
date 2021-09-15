@@ -1,5 +1,6 @@
 #include <config/data.hpp>
 #include <unordered_map>
+#include <convex.hpp>
 
 namespace Config {
 
@@ -29,4 +30,9 @@ namespace Data {
 namespace impl_Shader {
 using GLuint = unsigned int;
 std::unordered_map<std::string, GLuint> shaderCache;
+} // namespace impl_Shader
+
+namespace CanvasOp {
+Polygon::Convex fullScreenConvex =
+    Polygon::Convex::fromArray(Config::Data::fullScreenVertices);
 }

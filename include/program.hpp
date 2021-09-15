@@ -15,7 +15,7 @@ class Program final {
     Program(){};
 
     template<typename... S>
-    requires std::convertible_to<S..., GLuint>
+    // requires std::convertible_to<S..., GLuint>
     explicit Program(const S &...shader) : programId(glCreateProgram()) {
         attach(shader...);
         link();

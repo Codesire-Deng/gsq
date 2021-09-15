@@ -10,6 +10,7 @@ class UCanvasGen : public Uniform {
     UCanvasGen &setSRow0(const int data[]);
     UCanvasGen &setSRow1(const int data[]);
     UCanvasGen &setSRow2(const int data[]);
+    UCanvasGen &setS(const int data[][3]);
     UCanvasGen &sendS();
 
   protected:

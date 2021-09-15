@@ -22,8 +22,8 @@ inline Canvas<Size> &blendPointsWithPolygons(
     };
     context.use();
     result.bind(0, Access::writeOnly);
-    points.bind(1, Access::readOnly);
-    polygons.bind(2, Access::readOnly);
+    points.bindConst(1);
+    polygons.bindConst(2);
     fullScreenConvex.draw();
 }
 
@@ -33,15 +33,16 @@ inline Canvas<Size> &blendPolygons(
     Canvas<Size> &result,
     const Canvas<Size> &polygons0,
     const Canvas<Size> &polygons1) {
-    static Program context{
+    static Program context(
         VertexShader("shader/point.vert"),
-        FragmentShader("shader/canvasBlendPolygons.frag"),
-    };
+        FragmentShader("shader/canvasBlendPolygons.frag")
+    );
     context.use();
     result.bind(0, Access::writeOnly);
-    polygons0.bind(1, Access::readOnly);
-    polygons1.bind(2, Access::readOnly);
+    polygons0.bindConst(1);
+    polygons1.bindConst(2);
     fullScreenConvex.draw();
+    return result;
 }
 
 } // namespace CanvasOp

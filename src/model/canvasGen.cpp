@@ -28,6 +28,13 @@ UCanvasGen &UCanvasGen::setSRow2(const int data[]) {
     return *this;
 }
 
+UCanvasGen &UCanvasGen::setS(const int data[][3]) {
+    setSRow0(data[0]);
+    setSRow1(data[1]);
+    setSRow2(data[2]);
+    return *this;
+}
+
 UCanvasGen &UCanvasGen::sendS() {
     glUniform3iv(lSColumn0, 1, sData[0]);
     glUniform3iv(lSColumn1, 1, sData[1]);

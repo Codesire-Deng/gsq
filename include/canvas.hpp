@@ -69,6 +69,12 @@ class Canvas final {
         return *this;
     }
 
+    inline const Canvas &bindConst(GLuint unit) const {
+        glBindImageTexture(
+            unit, textureId, 0, GL_TRUE, 0, (GLenum)Access::readOnly, INTERNAL_FORMAT);
+        return *this;
+    }
+
     inline Config::Type::SData readS(GLint xOffset, GLint yOffset) const {
         static int sColumn[4];
         Config::Type::SData result;

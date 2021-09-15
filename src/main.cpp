@@ -44,7 +44,10 @@ using namespace Config::Type;
 
 int verticesNum, queryPolygonsNum;
 
-Color3f pointColor(1.0f, 0.5f, 0.2f), polygonColor(1.0f, 1.0f, 0.5f);
+Color3f pointColor(1.0f, 0.5f, 0.2f);
+Color3f polygonColor(1.0f, 1.0f, 0.5f);
+Color3f polygon1Color(1.0f, 0.5f, 0.5f);
+Color3f polygon2Color(0.5f, 0.5f, 1.0f);
 
 GLuint pointsVBO, pointsVAO;
 Program pointProgram, canvasGenProgram;
@@ -57,12 +60,13 @@ Bound2D bound2D;
 
 Polygon::Polygon p0, p1, p2;
 
-Polygon::Convex fullScreenConvex =
-    Polygon::Convex::fromArray(Config::Data::fullScreenVertices);
+
 
 static void inputPoints();
 static void inputPolygons();
 static void input();
+static void workloadPoints();
+static void workloadPolygons();
 static void workload();
 
 } // namespace Work
@@ -133,6 +137,14 @@ int main() {
                 "Polygon color",
                 Work::polygonColor
                     .data()); // Edit 3 floats representing a color
+            ImGui::ColorEdit3(
+                "Polygon1 color",
+                Work::polygon1Color
+                    .data()); // Edit 3 floats representing a color
+            ImGui::ColorEdit3(
+                "Polygon2 color",
+                Work::polygon2Color
+                    .data()); // Edit 3 floats representing a color
 
             ImGui::ColorEdit3(
                 "Clear color",
@@ -202,7 +214,7 @@ int main() {
 
 namespace Work {
 
-static void workload() {
+static void workloadPoints() {
     static Canvas canvas;
 
     showGlError();
@@ -216,13 +228,9 @@ static void workload() {
     // clang-format on
 
     uCanvasGen.useProgram();
-    uCanvasGen.sendCustomColor(polygonColor.data())
-        .setSRow0(sData[0])
-        .setSRow1(sData[1])
-        .setSRow2(sData[2])
-        .sendS();
+    uCanvasGen.sendCustomColor(polygonColor.data()).setS(sData).sendS();
     showGlError();
-    checkGlError(canvas.bind(0, Access::readWrite));
+    checkGlError(canvas.bind(0, Access::writeOnly));
     // draw convexs
     p0.draw();
 
@@ -245,6 +253,50 @@ static void workload() {
     }
 }
 
+static void workloadPolygons() {
+    static Canvas result, blend1, blend2;
+    showGlError();
+    // clang-format off
+    static const int sData1[3][3] = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {1, 1, 0},
+    };
+    static const int sData2[3][3] = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {2, 1, 0},
+    };
+    // clang-format on
+
+    // canvas for blend1
+    uCanvasGen.useProgram();
+    uCanvasGen.sendCustomColor(polygon1Color.data()).setS(sData1).sendS();
+    showGlError();
+    checkGlError(blend1.bind(0, Access::writeOnly));
+    p1.draw();
+    showGlError();
+
+    // canvas for blend2
+    uCanvasGen.useProgram();
+    uCanvasGen.sendCustomColor(polygon2Color.data()).setS(sData2).sendS();
+    showGlError();
+    checkGlError(blend2.bind(0, Access::writeOnly));
+    p2.draw();
+    showGlError();
+
+    CanvasOp::blendPolygons(result, blend1, blend2);
+    if (mouse != mouseLast) {
+        mouseSData = result.readS(mouse.x, mouse.y);
+        mouseLast = mouse;
+    }
+}
+
+static void workload() {
+    // workloadPoints();
+    workloadPolygons();
+}
+
 static void inputPoints() {
     using namespace std::views;
     constexpr int MAX_VERT = 32;
@@ -264,8 +316,8 @@ static void inputPoints() {
     // input querying polygons, which are made convexs
     p0 = Polygon::Polygon::fromInput(in);
     bound2D.merge(p0.bound());
-    bound2D.slack(Config::BOUND_SLACK);
 
+    bound2D.slack(Config::BOUND_SLACK);
     const real ratio = (real)std::min<double>(
         1.0 / (bound2D.bounds[0].length()) * (1.0f - (-1.0f)),
         1.0 / (bound2D.bounds[1].length()) * (1.0f - (-1.0f)));
@@ -278,8 +330,7 @@ static void inputPoints() {
     };
 
     std::for_each_n(points, verticesNum, lerp);
-    p0.adjustVertices(lerp);
-    p0.genVAO();
+    p0.adjustVertices(lerp).genVAO();
 
     glGenBuffers(1, &pointsVBO);
     glGenVertexArrays(1, &pointsVAO);
@@ -304,10 +355,28 @@ static void inputPoints() {
 }
 
 static void inputPolygons() {
+    FILE *in = fopen("data/select_polygons.txt", "r");
+    p1 = Polygon::Polygon::fromInput(in);
+    p2 = Polygon::Polygon::fromInput(in);
+    bound2D.merge(p1.bound());
+    bound2D.merge(p2.bound());
+    bound2D.slack(Config::BOUND_SLACK);
+
+    const real ratio = (real)std::min<double>(
+        1.0 / (bound2D.bounds[0].length()) * (1.0f - (-1.0f)),
+        1.0 / (bound2D.bounds[1].length()) * (1.0f - (-1.0f)));
+    // scale all coordinates to [-1.0, 1.0]
+    const auto &lerp = [&](Point &point) {
+        for (int i = 0; i < 2; ++i) {
+            point[i] = (point[i] - bound2D.bounds[i].lowerBound) * ratio - 1.0f;
+        }
+    };
+    p1.adjustVertices(lerp).genVAO();
+    p2.adjustVertices(lerp).genVAO();
 }
 
 static void input() {
-    fullScreenConvex.genVAO();
+    CanvasOp::fullScreenConvex.genVAO();
 
     // construct shader and program
     VertexShader pointVShader("shader/point.vert");
@@ -328,7 +397,8 @@ static void input() {
     customColorLocation = glGetUniformLocation(pointProgram, "customColor");
     uCanvasGen.setProgram(canvasGenProgram);
 
-    inputPoints();
+    // inputPoints();
+    inputPolygons();
 }
 
 } // namespace Work

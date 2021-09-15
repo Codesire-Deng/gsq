@@ -53,12 +53,12 @@ Config::Type::SData mouseSData;
 Config::Type::Offset2D mouse, mouseLast;
 float pointSize = 10.0f;
 int customColorLocation = -1;
-Bound<Config::Type::real> bound[2];
+Bound2D bound2D;
 
 Polygon::Polygon p0, p1, p2;
 
 Polygon::Convex fullScreenConvex =
-    Polygon::Convex::FromArray(Config::Data::fullScreenVertices);
+    Polygon::Convex::fromArray(Config::Data::fullScreenVertices);
 
 static void inputPoints();
 static void inputPolygons();
@@ -249,7 +249,6 @@ static void inputPoints() {
     using namespace std::views;
     constexpr int MAX_VERT = 32;
     static Point points[MAX_VERT];
-    std::vector<Polygon::Convex> convexs;
 
     FILE *in = fopen("data/select_points.txt", "r");
 
@@ -258,42 +257,27 @@ static void inputPoints() {
     for (float x, y; auto &point : points | take(verticesNum)) {
         fscanf(in, "%f%f", &x, &y);
         point << x, y;
-        bound[0].merge(x);
-        bound[1].merge(y);
+        bound2D.bounds[0].merge(x);
+        bound2D.bounds[1].merge(y);
     }
 
     // input querying polygons, which are made convexs
-    fscanf(in, "%d", &queryPolygonsNum);
-    for (int i = 0; i < queryPolygonsNum; ++i) {
-        convexs.push_back(Polygon::Convex::FromInput(in));
-        auto [xBound, yBound] = convexs.back().bounds();
-        bound[0].merge(xBound);
-        bound[1].merge(yBound);
-    }
-
-    for (int i = 0; i < 2; ++i) {
-        bound[i].lowerBound -= 5.0f;
-        bound[i].upperBound += 5.0f;
-    }
+    p0 = Polygon::Polygon::fromInput(in);
+    bound2D.merge(p0.bound());
+    bound2D.slack(Config::BOUND_SLACK);
 
     const real ratio = (real)std::min<double>(
-        1.0 / (bound[0].upperBound - bound[0].lowerBound) * (1.0f - (-1.0f)),
-        1.0 / (bound[1].upperBound - bound[1].lowerBound) * (1.0f - (-1.0f)));
+        1.0 / (bound2D.bounds[0].length()) * (1.0f - (-1.0f)),
+        1.0 / (bound2D.bounds[1].length()) * (1.0f - (-1.0f)));
 
     // scale all coordinates to [-1.0, 1.0]
     const auto &lerp = [&](Point &point) {
         for (int i = 0; i < 2; ++i) {
-            point[i] = (point[i] - bound[i].lowerBound) * ratio - 1.0f;
+            point[i] = (point[i] - bound2D.bounds[i].lowerBound) * ratio - 1.0f;
         }
     };
 
     std::for_each_n(points, verticesNum, lerp);
-    // for (auto &convex : convexs) {
-    //     auto &vertices = convex.pubVertices();
-    //     std::ranges::for_each(vertices, lerp);
-    // }
-
-    p0 = Polygon::Polygon(std::move(convexs));
     p0.adjustVertices(lerp);
     p0.genVAO();
 
@@ -320,7 +304,6 @@ static void inputPoints() {
 }
 
 static void inputPolygons() {
-
 }
 
 static void input() {

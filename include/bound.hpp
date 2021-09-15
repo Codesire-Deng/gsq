@@ -18,4 +18,24 @@ struct Bound final {
         if (other.upperBound > upperBound) upperBound = other.upperBound;
         return *this;
     }
+    inline Bound &slack(T x) {
+        lowerBound -= x;
+        upperBound += x;
+        return *this;
+    }
+    inline T length() const { return upperBound - lowerBound; }
+};
+
+template<typename T, size_t N>
+struct Bounds final {
+    Bound<T> bounds[N];
+    constexpr Bounds() {}
+    inline Bounds &merge(const Bounds &other) {
+        for (int i = 0; i < N; ++i) { bounds[i].merge(other.bounds[i]); }
+        return *this;
+    }
+    inline Bounds &slack(T x) {
+        for (int i = 0; i < N; ++i) { bounds[i].slack(x); }
+        return *this;
+    }
 };

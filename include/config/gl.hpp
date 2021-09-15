@@ -7,7 +7,7 @@ namespace Config {
 
 constexpr unsigned int SCR_WIDTH = 1024;
 constexpr unsigned int SCR_HEIGHT = 1024;
-
+constexpr float BOUND_SLACK = 5.0f;
 constexpr bool ENABLE_MSAA = true;
 constexpr bool RELEASE_SHADER = true;
 

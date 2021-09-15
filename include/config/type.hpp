@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <bound.hpp>
 #include <Eigen/Dense>
 
 namespace Config {
@@ -11,6 +12,7 @@ namespace Type {
     using Vertex = Point;
     using Color3f = Eigen::Vector3f;
     using Color4f = Eigen::Vector4f;
+    using Bound2D = Bounds<real, 2>;
 
     using SData = Eigen::Matrix3i;
 

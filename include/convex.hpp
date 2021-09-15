@@ -13,10 +13,10 @@ using namespace Config::Type;
 
 class Convex : public Mesh {
   public:
-    static Convex FromInput(FILE *const in);
+    static Convex fromInput(FILE *const in);
 
     template<size_t N>
-    static Convex FromArray(const float (&vertices)[N]);
+    static Convex fromArray(const float (&vertices)[N]);
 
     Convex(const Convex &other) : vertices(other.vertices), VAO(other.VAO) {}
 
@@ -40,7 +40,7 @@ class Convex : public Mesh {
         return *this;
     }
 
-    std::pair<Bound<real>, Bound<real>> bounds() const;
+    Bound2D bound() const;
 
     virtual void genVAO() override;
     virtual void draw() const override;
@@ -64,7 +64,7 @@ class Convex : public Mesh {
 };
 
 template<size_t N>
-[[nodiscard]] Convex Convex::FromArray(const float (&vertices)[N]) {
+[[nodiscard]] Convex Convex::fromArray(const float (&vertices)[N]) {
     Convex result;
     static_assert((N & 1) == 0);
     constexpr int verticesNum = N / 2;

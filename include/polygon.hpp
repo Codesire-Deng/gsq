@@ -3,6 +3,7 @@
 #include <convex.hpp>
 #include <vector>
 #include <concepts>
+#include <iostream>
 
 namespace Polygon {
 
@@ -17,6 +18,8 @@ class Polygon final : public Mesh {
     Polygon(const Polygon &other) : convexs(other.convexs) {}
 
     Polygon(Polygon &&other) : convexs(std::move(other.convexs)) {}
+
+    static Polygon fromInput(FILE *const in);
 
     Polygon &operator=(const Polygon &other) {
         if (this == &other) return *this;
@@ -37,6 +40,8 @@ class Polygon final : public Mesh {
     virtual void draw() const override {
         for (auto &c : convexs) { c.draw(); }
     }
+
+    Bound2D bound() const;
 
     template<typename F>
     Polygon &adjustVertices(const F &f) requires std::invocable<F, Vertex &> {

@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace Polygon {
-[[nodiscard]] Convex Convex::FromInput(FILE *const in) {
+[[nodiscard]] Convex Convex::fromInput(FILE *const in) {
     Convex result;
     int verticesNum;
     fscanf(in, "%d", &verticesNum);
@@ -27,13 +27,13 @@ namespace Polygon {
 
 
 
-[[nodiscard]] std::pair<Bound<real>, Bound<real>> Convex::bounds() const {
-    Bound<real> bound[2];
+[[nodiscard]] Bound2D Convex::bound() const {
+    Bound2D result;
     for (const auto &v : vertices) {
-        bound[0].merge(v.x());
-        bound[1].merge(v.y());
+        result.bounds[0].merge(v.x());
+        result.bounds[1].merge(v.y());
     }
-    return std::make_pair(bound[0], bound[1]);
+    return result;
 }
 
 void Convex::genVAO() {

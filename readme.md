@@ -1,5 +1,10 @@
 ## 进度
 
+多边形选多边形（blend polygons）
+
+![select_polygons_demo_0](/doc/assets/select_polygons_demo_0.png)
+![select_polygons_demo_1](/doc/assets/select_polygons_demo_1.png)
+
 支持初始化、写入、直读 Canvas
 
 ![select_points_canvas_demo](/doc/assets/select_points_canvas_demo.png)

@@ -22,26 +22,27 @@ class Program final {
         assertAvailable();
     }
 
-    template<typename S, typename... Ss>
-    Program &attach(const S &shader, const Ss &...shaders) requires
-        std::convertible_to<S, GLuint> {
-        glAttachShader(programId, shader);
-        if constexpr (sizeof...(shaders) > 0) { attach(shaders...); }
-        return *this;
-    }
-
     inline Program &init() {
         assert(programId == 0 && "Program: duplicate init");
         programId = glCreateProgram();
         return *this;
     }
 
-    inline Program &link() {
-        glLinkProgram(programId);
+    inline void use() const { glUseProgram(programId); }
+
+    template<typename S, typename... Ss>
+    Program &attachAndLink(const S &shader, const Ss &...shaders) requires
+        std::convertible_to<S, GLuint> {
+        assert(isInited() && "Program: attachAndLink before init");
+        glAttachShader(programId, shader);
+        if constexpr (sizeof...(shaders) > 0) { attach(shaders...); }
+        link();
         return *this;
     }
 
-    inline void use() const { glUseProgram(programId); }
+    inline bool isInited() const {
+        return programId != 0;
+    }
 
     void assertAvailable() const {
 #ifdef DEBUG
@@ -57,6 +58,20 @@ class Program final {
         }
 #endif
     };
+
+  private:
+    template<typename S, typename... Ss>
+    Program &attach(const S &shader, const Ss &...shaders) requires
+        std::convertible_to<S, GLuint> {
+        glAttachShader(programId, shader);
+        if constexpr (sizeof...(shaders) > 0) { attach(shaders...); }
+        return *this;
+    }
+
+    inline Program &link() {
+        glLinkProgram(programId);
+        return *this;
+    }
 
   private:
     GLuint programId = 0;

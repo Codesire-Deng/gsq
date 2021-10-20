@@ -319,8 +319,8 @@ static void inputPoints() {
 
     bound2D.slack(Config::BOUND_SLACK);
     const real ratio = (real)std::min<double>(
-        1.0 / (bound2D.bounds[0].length()) * (1.0f - (-1.0f)),
-        1.0 / (bound2D.bounds[1].length()) * (1.0f - (-1.0f)));
+        1.0 / (bound2D.bounds[0].length()) * (1.0 - (-1.0)),
+        1.0 / (bound2D.bounds[1].length()) * (1.0 - (-1.0)));
 
     // scale all coordinates to [-1.0, 1.0]
     const auto &lerp = [&](Point &point) {
@@ -363,8 +363,8 @@ static void inputPolygons() {
     bound2D.slack(Config::BOUND_SLACK);
 
     const real ratio = (real)std::min<double>(
-        1.0 / (bound2D.bounds[0].length()) * (1.0f - (-1.0f)),
-        1.0 / (bound2D.bounds[1].length()) * (1.0f - (-1.0f)));
+        1.0 / (bound2D.bounds[0].length()) * (1.0 - (-1.0)),
+        1.0 / (bound2D.bounds[1].length()) * (1.0 - (-1.0)));
     // scale all coordinates to [-1.0, 1.0]
     const auto &lerp = [&](Point &point) {
         for (int i = 0; i < 2; ++i) {
@@ -382,15 +382,13 @@ static void input() {
     VertexShader pointVShader("shader/point.vert");
     FragmentShader pointFShader("shader/point.frag");
     pointProgram.init()
-        .attach(pointVShader, pointFShader)
-        .link()
+        .attachAndLink(pointVShader, pointFShader)
         .assertAvailable();
 
     VertexShader canvasGenVShader("shader/canvasGen.vert");
     FragmentShader canvasGenFShader("shader/canvasGen.frag");
     canvasGenProgram.init()
-        .attach(canvasGenVShader, canvasGenFShader)
-        .link()
+        .attachAndLink(canvasGenVShader, canvasGenFShader)
         .assertAvailable();
 
     // prepare to set color uniform

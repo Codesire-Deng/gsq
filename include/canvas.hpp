@@ -15,10 +15,12 @@ enum class Access : GLenum {
 };
 
 template<
-    typename Size2D = Config::Type::Size2D<Config::SCR_WIDTH, Config::SCR_HEIGHT>>
+    typename Size2D =
+        Config::Type::Size2D<Config::SCR_WIDTH, Config::SCR_HEIGHT>>
 class Canvas final {
   public:
     static constexpr int COLUMN_SIZE = 3;
+    static constexpr int COLUMN_LENGTH = 4; // RGBA
     static constexpr GLenum INTERNAL_FORMAT = GL_RGBA32I;
     static constexpr GLenum FORMAT = GL_RGBA_INTEGER;
     static constexpr GLenum TYPE = GL_INT;
@@ -71,39 +73,41 @@ class Canvas final {
 
     inline const Canvas &bindConst(GLuint unit) const {
         glBindImageTexture(
-            unit, textureId, 0, GL_TRUE, 0, (GLenum)Access::readOnly, INTERNAL_FORMAT);
+            unit,
+            textureId,
+            0,
+            GL_TRUE,
+            0,
+            (GLenum)Access::readOnly,
+            INTERNAL_FORMAT);
         return *this;
     }
 
     inline Config::Type::SData readS(GLint xOffset, GLint yOffset) const {
-        static int sColumn[4];
+        static int sColumn[COLUMN_SIZE][COLUMN_LENGTH];
         Config::Type::SData result;
-        const auto &copyColomn = [&, this](int column) {
-            showGlError();
-            glGetTextureSubImage(
-                textureId,
-                0,
-                xOffset,
-                yOffset,
-                column,
-                1,
-                1,
-                1,
-                FORMAT,
-                TYPE,
-                sizeof(sColumn),
-                sColumn);
-            showGlError();
-            for (int i = 0; i < 3; ++i) result.coeffRef(i, column) = sColumn[i];
-        };
-        copyColomn(0);
-        copyColomn(1);
-        copyColomn(2);
+        showGlError();
+        glGetTextureSubImage(
+            textureId,
+            0,
+            xOffset,
+            yOffset,
+            0,           // zOffset
+            1,           // width
+            1,           // height
+            COLUMN_SIZE, // depth
+            FORMAT,
+            TYPE,
+            sizeof(sColumn),
+            sColumn);
+        showGlError();
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < COLUMN_SIZE; ++j)
+                result.coeffRef(i, j) = sColumn[j][i];
         return result;
     }
 
   public:
-    
   private:
     GLuint textureId = 0;
 };

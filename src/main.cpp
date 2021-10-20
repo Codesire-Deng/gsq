@@ -193,6 +193,7 @@ int main() {
             clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // IMPORTENT: Entrance to workload
         checkGlError(Work::workload());
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
